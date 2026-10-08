@@ -1,0 +1,16 @@
+# raw UCDP data (download it yourself, see README)
+data/
+*.csv
+*.zip
+
+# Power BI local files
+**/.pbi/localSettings.json
+**/.pbi/cache.abf
+
+# Metabase runtime (jar, app database, API key)
+metabase/*.jar
+metabase/*.db
+metabase/*.mv.db
+metabase/*.trace.db
+metabase/.apikey
+plugins/

@@ -1,0 +1,33 @@
+table Regions
+	lineageTag: 81a45776-d742-5ff4-8da7-967143751c07
+
+	column Region
+		dataType: string
+		lineageTag: f5d67f89-1494-5496-a0b9-19c7a35f9725
+		summarizeBy: none
+		sourceColumn: Region
+		sortByColumn: 'Region Order'
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Region Order'
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 1fb5ec47-8e08-5a40-8677-60eb417aca9e
+		summarizeBy: none
+		sourceColumn: Region Order
+
+		annotation SummarizationSetBy = Automatic
+
+	partition Regions = m
+		mode: import
+		source =
+				let
+				    Source = #table({"Region", "Region Order"}, {{"Africa", 1}, {"Middle East", 2}, {"Asia", 3}, {"Europe", 4}, {"Americas", 5}}),
+				    #"Changed Type" = Table.TransformColumnTypes(Source, {{"Region", type text}, {"Region Order", Int64.Type}})
+				in
+				    #"Changed Type"
+
+	annotation PBI_ResultType = Table
+

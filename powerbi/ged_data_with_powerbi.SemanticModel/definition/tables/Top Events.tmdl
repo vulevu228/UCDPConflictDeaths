@@ -1,0 +1,116 @@
+table 'Top Events'
+	lineageTag: 77e71b37-51f1-564f-83fe-a4d700f2b46f
+
+	column List
+		dataType: string
+		lineageTag: ed35f628-68ed-5180-8169-cece90e994de
+		summarizeBy: none
+		sourceColumn: List
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Event ID'
+		dataType: int64
+		formatString: 0
+		lineageTag: dfabd07d-9bf7-5ce2-901c-14cf7a1151e5
+		summarizeBy: none
+		sourceColumn: Event ID
+
+		annotation SummarizationSetBy = Automatic
+
+	column Start
+		dataType: dateTime
+		formatString: dd mmm yyyy
+		lineageTag: 4fccb4aa-7c1f-5aaf-babe-beff12875406
+		summarizeBy: none
+		sourceColumn: Start
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column End
+		dataType: dateTime
+		formatString: dd mmm yyyy
+		lineageTag: 78597fcb-7a74-503b-b63a-651bf4ed8a38
+		summarizeBy: none
+		sourceColumn: End
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column Days
+		dataType: int64
+		formatString: #,##0
+		lineageTag: 98cfaf84-d3f3-5aa4-95b4-246ec45abe68
+		summarizeBy: none
+		sourceColumn: Days
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Date Precision'
+		dataType: int64
+		formatString: 0
+		lineageTag: a67a4a98-550d-53ec-8012-b44b4f410af0
+		summarizeBy: none
+		sourceColumn: Date Precision
+
+		annotation SummarizationSetBy = Automatic
+
+	column Country
+		dataType: string
+		lineageTag: a91113cd-954d-5d38-8a07-59773ea74d0d
+		summarizeBy: none
+		sourceColumn: Country
+
+		annotation SummarizationSetBy = Automatic
+
+	column Region
+		dataType: string
+		isHidden
+		lineageTag: 9d7d38f0-60e8-5448-b855-94642da87d3a
+		summarizeBy: none
+		sourceColumn: Region
+
+		annotation SummarizationSetBy = Automatic
+
+	column Conflict
+		dataType: string
+		lineageTag: 11ffd2d6-cbf9-5c45-b22c-ee2f594831a0
+		summarizeBy: none
+		sourceColumn: Conflict
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Violence Type'
+		dataType: string
+		lineageTag: 8a47a81a-1d3e-5deb-a44e-402017f2cac7
+		summarizeBy: none
+		sourceColumn: Violence Type
+
+		annotation SummarizationSetBy = Automatic
+
+	column Deaths
+		dataType: int64
+		formatString: #,##0
+		lineageTag: 8530701d-c5a6-509a-b771-4481478f5049
+		summarizeBy: sum
+		sourceColumn: Deaths
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'Top Events' = m
+		mode: import
+		source =
+				let
+				    // top 15 exact-date events + top 15 rows that cover more than one day
+				    Source = PostgreSQL.Database("localhost", "world_events"),
+				    Data = Value.NativeQuery(Source, "WITH exact AS (#(lf)    SELECT 'exact' AS list, event_id, start_date, end_date, end_date - start_date + 1 AS days, date_precision,#(lf)           country, region, conflict_name, violence_type, deaths_best#(lf)    FROM ged#(lf)    WHERE date_precision = 1#(lf)      AND start_date = end_date#(lf)    ORDER BY deaths_best DESC#(lf)    LIMIT 15#(lf)),#(lf)multi AS (#(lf)    SELECT 'multi' AS list, event_id, start_date, end_date, end_date - start_date + 1 AS days, date_precision,#(lf)           country, region, conflict_name, violence_type, deaths_best#(lf)    FROM ged#(lf)    WHERE end_date > start_date#(lf)    ORDER BY deaths_best DESC#(lf)    LIMIT 15#(lf))#(lf)SELECT * FROM exact#(lf)UNION ALL#(lf)SELECT * FROM multi", null, [EnableFolding = true]),
+				    #"Renamed Columns" = Table.RenameColumns(Data, {{"list", "List"}, {"event_id", "Event ID"}, {"start_date", "Start"}, {"end_date", "End"}, {"days", "Days"}, {"date_precision", "Date Precision"}, {"country", "Country"}, {"region", "Region"}, {"conflict_name", "Conflict"}, {"violence_type", "Violence Type"}, {"deaths_best", "Deaths"}}),
+				    #"Changed Type" = Table.TransformColumnTypes(#"Renamed Columns", {{"List", type text}, {"Event ID", Int64.Type}, {"Start", type date}, {"End", type date}, {"Days", Int64.Type}, {"Date Precision", Int64.Type}, {"Country", type text}, {"Region", type text}, {"Conflict", type text}, {"Violence Type", type text}, {"Deaths", Int64.Type}})
+				in
+				    #"Changed Type"
+
+	annotation PBI_ResultType = Table
+

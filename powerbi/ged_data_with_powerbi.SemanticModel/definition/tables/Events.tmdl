@@ -1,0 +1,119 @@
+table Events
+	lineageTag: 2398bb50-9f61-5738-9048-2c979fcfc76d
+
+	column 'Event ID'
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 1d47a019-392f-5086-ad4a-59e7232e570b
+		summarizeBy: none
+		sourceColumn: Event ID
+
+		annotation SummarizationSetBy = Automatic
+
+	column Year
+		dataType: int64
+		formatString: 0
+		lineageTag: b0b8611c-1eb5-54db-9824-5e377785d07a
+		summarizeBy: none
+		sourceColumn: Year
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Violence Type'
+		dataType: string
+		lineageTag: 0088aa45-fc8f-56ca-b0cc-fd530e17cac7
+		summarizeBy: none
+		sourceColumn: Violence Type
+
+		annotation SummarizationSetBy = Automatic
+
+	column Conflict
+		dataType: string
+		lineageTag: 6035ab42-e9f6-5db9-95ae-a58d5499f6ba
+		summarizeBy: none
+		sourceColumn: Conflict
+
+		annotation SummarizationSetBy = Automatic
+
+	column Country
+		dataType: string
+		lineageTag: 8aa484f9-0aa4-54c8-9854-a59aaef109cc
+		summarizeBy: none
+		sourceColumn: Country
+
+		annotation SummarizationSetBy = Automatic
+
+	column Region
+		dataType: string
+		isHidden
+		lineageTag: 1a48e2c9-4638-5fcc-9729-0baa48bc6cae
+		summarizeBy: none
+		sourceColumn: Region
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Start Date'
+		dataType: dateTime
+		formatString: dd mmm yyyy
+		lineageTag: 1edd4492-914c-5f48-b552-a459e78ce6eb
+		summarizeBy: none
+		sourceColumn: Start Date
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column 'End Date'
+		dataType: dateTime
+		formatString: dd mmm yyyy
+		lineageTag: b26b8472-0167-5896-9ce3-1715c23b3c12
+		summarizeBy: none
+		sourceColumn: End Date
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column 'Date Precision'
+		dataType: int64
+		formatString: 0
+		lineageTag: f744fe2d-0564-5a84-8538-24f01b216c3d
+		summarizeBy: none
+		sourceColumn: Date Precision
+
+		annotation SummarizationSetBy = Automatic
+
+	column Deaths
+		dataType: int64
+		formatString: #,##0
+		lineageTag: 368bedae-c4c2-546c-828d-8bccd7efbf0a
+		summarizeBy: sum
+		sourceColumn: Deaths
+
+		annotation SummarizationSetBy = Automatic
+
+	column 'Civilian Deaths'
+		dataType: int64
+		formatString: #,##0
+		lineageTag: 5cbadaf0-6cbc-527d-bf19-a078eadab06b
+		summarizeBy: sum
+		sourceColumn: Civilian Deaths
+
+		annotation SummarizationSetBy = Automatic
+
+	partition Events = m
+		mode: import
+		source =
+				let
+				    // the clean view ged (sql/01_create_view_ged.sql), one row per event
+				    Source = PostgreSQL.Database("localhost", "world_events"),
+				    ged = Source{[Schema = "public", Item = "ged"]}[Data],
+				    Data = Table.SelectColumns(ged, {"event_id", "year", "violence_type", "conflict_name", "country", "region", "start_date", "end_date", "date_precision", "deaths_best", "deaths_civilians"}),
+				    #"Renamed Columns" = Table.RenameColumns(Data, {{"event_id", "Event ID"}, {"year", "Year"}, {"violence_type", "Violence Type"}, {"conflict_name", "Conflict"}, {"country", "Country"}, {"region", "Region"}, {"start_date", "Start Date"}, {"end_date", "End Date"}, {"date_precision", "Date Precision"}, {"deaths_best", "Deaths"}, {"deaths_civilians", "Civilian Deaths"}}),
+				    #"Changed Type" = Table.TransformColumnTypes(#"Renamed Columns", {{"Event ID", Int64.Type}, {"Year", Int64.Type}, {"Violence Type", type text}, {"Conflict", type text}, {"Country", type text}, {"Region", type text}, {"Start Date", type date}, {"End Date", type date}, {"Date Precision", Int64.Type}, {"Deaths", Int64.Type}, {"Civilian Deaths", Int64.Type}})
+				in
+				    #"Changed Type"
+
+	annotation PBI_ResultType = Table
+

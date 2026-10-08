@@ -1,0 +1,76 @@
+table Monthly
+	lineageTag: 91e3c8da-a487-581e-a5fc-4ede953630d9
+
+	column Country
+		dataType: string
+		lineageTag: ee41c7f9-bacd-54a5-90a8-b80b87933ece
+		summarizeBy: none
+		sourceColumn: Country
+
+		annotation SummarizationSetBy = Automatic
+
+	column Region
+		dataType: string
+		isHidden
+		lineageTag: dd6f72c7-5729-5785-a74c-529b77ab6321
+		summarizeBy: none
+		sourceColumn: Region
+
+		annotation SummarizationSetBy = Automatic
+
+	column Month
+		dataType: dateTime
+		formatString: mmm yyyy
+		lineageTag: f02d69bb-0dec-5088-af18-7cf4f225c7cf
+		summarizeBy: none
+		sourceColumn: Month
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation UnderlyingDateTimeDataType = Date
+
+	column 'Deaths Spread'
+		dataType: double
+		formatString: #,##0
+		lineageTag: 5d820599-68a4-555d-9f3d-d0dc9b25833d
+		summarizeBy: sum
+		sourceColumn: Deaths Spread
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column 'Deaths Start Month'
+		dataType: double
+		formatString: #,##0
+		lineageTag: cf5c33ba-2b96-5737-8507-a9c3592c91ec
+		summarizeBy: sum
+		sourceColumn: Deaths Start Month
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column 'Rank 2025'
+		dataType: int64
+		formatString: 0
+		lineageTag: cbe4a58b-aa92-5ace-8b67-3d62518feb21
+		summarizeBy: none
+		sourceColumn: Rank 2025
+
+		annotation SummarizationSetBy = Automatic
+
+	partition Monthly = m
+		mode: import
+		source =
+				let
+				    // country x month; deaths spread over each event's days + naive start-month sum
+				    Source = PostgreSQL.Database("localhost", "world_events"),
+				    Data = Value.NativeQuery(Source, "WITH spread AS (#(lf)    SELECT g.country, g.region,#(lf)           date_trunc('month', d)::date AS month,#(lf)           SUM(g.deaths_best::numeric / (g.end_date - g.start_date + 1)) AS deaths_spread#(lf)    FROM ged g#(lf)    CROSS JOIN LATERAL generate_series(g.start_date, g.end_date, interval '1 day') AS d#(lf)    GROUP BY 1, 2, 3#(lf)),#(lf)naive AS (#(lf)    SELECT country, region, date_trunc('month', start_date)::date AS month,#(lf)           SUM(deaths_best) AS deaths_start_month#(lf)    FROM ged#(lf)    GROUP BY 1, 2, 3#(lf)),#(lf)rank_2025 AS (#(lf)    SELECT country, RANK() OVER (ORDER BY SUM(deaths_best) DESC) AS rank_2025#(lf)    FROM ged#(lf)    WHERE year = 2025#(lf)    GROUP BY country#(lf))#(lf)SELECT COALESCE(s.country, n.country) AS country,#(lf)       COALESCE(s.region, n.region)   AS region,#(lf)       COALESCE(s.month, n.month)     AS month,#(lf)       ROUND(COALESCE(s.deaths_spread, 0), 2)  AS deaths_spread,#(lf)       COALESCE(n.deaths_start_month, 0)       AS deaths_start_month,#(lf)       r.rank_2025#(lf)FROM spread s#(lf)FULL JOIN naive n ON n.country = s.country AND n.region = s.region AND n.month = s.month#(lf)LEFT JOIN rank_2025 r ON r.country = COALESCE(s.country, n.country)#(lf)ORDER BY 3, 1", null, [EnableFolding = true]),
+				    #"Renamed Columns" = Table.RenameColumns(Data, {{"country", "Country"}, {"region", "Region"}, {"month", "Month"}, {"deaths_spread", "Deaths Spread"}, {"deaths_start_month", "Deaths Start Month"}, {"rank_2025", "Rank 2025"}}),
+				    #"Changed Type" = Table.TransformColumnTypes(#"Renamed Columns", {{"Country", type text}, {"Region", type text}, {"Month", type date}, {"Deaths Spread", type number}, {"Deaths Start Month", type number}, {"Rank 2025", Int64.Type}})
+				in
+				    #"Changed Type"
+
+	annotation PBI_ResultType = Table
+

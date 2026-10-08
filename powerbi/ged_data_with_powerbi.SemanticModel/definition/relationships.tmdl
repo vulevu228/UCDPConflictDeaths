@@ -1,0 +1,16 @@
+relationship e8cb58cb-8742-5d05-8812-900dd259d1c1
+	fromColumn: Events.Region
+	toColumn: Regions.Region
+
+relationship ceb5ef0b-15fa-5d84-9f13-8b7be1fc121a
+	fromColumn: Monthly.Region
+	toColumn: Regions.Region
+
+relationship ffd483d8-32d5-5e33-a765-b7c95899561d
+	fromColumn: 'Map 2025'.Region
+	toColumn: Regions.Region
+
+relationship e501a67d-af2e-5e02-9a7a-257729e645a5
+	fromColumn: 'Top Events'.Region
+	toColumn: Regions.Region
+

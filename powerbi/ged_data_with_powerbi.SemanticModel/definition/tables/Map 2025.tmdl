@@ -1,0 +1,76 @@
+table 'Map 2025'
+	lineageTag: d96b8e18-2026-55e7-b287-b998533b0922
+
+	column Latitude
+		dataType: double
+		formatString: 0.0
+		lineageTag: e08963d5-1e65-5432-81d9-cd09c8414e6f
+		dataCategory: Latitude
+		summarizeBy: none
+		sourceColumn: Latitude
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column Longitude
+		dataType: double
+		formatString: 0.0
+		lineageTag: d2699618-9b92-5048-9566-710b65c0ca22
+		dataCategory: Longitude
+		summarizeBy: none
+		sourceColumn: Longitude
+
+		annotation SummarizationSetBy = Automatic
+
+		annotation PBI_FormatHint = {"isGeneralNumber":true}
+
+	column Country
+		dataType: string
+		lineageTag: 5ddfd526-7eb8-5e91-a35a-7d6874eabe03
+		summarizeBy: none
+		sourceColumn: Country
+
+		annotation SummarizationSetBy = Automatic
+
+	column Region
+		dataType: string
+		isHidden
+		lineageTag: 25229284-4621-5cdd-a497-18c13f3e338d
+		summarizeBy: none
+		sourceColumn: Region
+
+		annotation SummarizationSetBy = Automatic
+
+	column Events
+		dataType: int64
+		formatString: #,##0
+		lineageTag: c6670643-46c9-52bf-84ea-b3fa54fdd271
+		summarizeBy: sum
+		sourceColumn: Events
+
+		annotation SummarizationSetBy = Automatic
+
+	column Deaths
+		dataType: int64
+		formatString: #,##0
+		lineageTag: 6c4cb8ef-6769-5ef6-83f5-e72bfed0cf7a
+		summarizeBy: sum
+		sourceColumn: Deaths
+
+		annotation SummarizationSetBy = Automatic
+
+	partition 'Map 2025' = m
+		mode: import
+		source =
+				let
+				    // 2025 events snapped to a 0.5 degree grid
+				    Source = PostgreSQL.Database("localhost", "world_events"),
+				    Data = Value.NativeQuery(Source, "SELECT ROUND(latitude * 2) / 2  AS lat,#(lf)       ROUND(longitude * 2) / 2 AS lon,#(lf)       MIN(country)             AS country,#(lf)       MIN(region)              AS region,#(lf)       COUNT(*)                 AS events,#(lf)       SUM(deaths_best)         AS deaths#(lf)FROM ged#(lf)WHERE year = 2025#(lf)  AND deaths_best > 0#(lf)GROUP BY 1, 2", null, [EnableFolding = true]),
+				    #"Renamed Columns" = Table.RenameColumns(Data, {{"lat", "Latitude"}, {"lon", "Longitude"}, {"country", "Country"}, {"region", "Region"}, {"events", "Events"}, {"deaths", "Deaths"}}),
+				    #"Changed Type" = Table.TransformColumnTypes(#"Renamed Columns", {{"Latitude", type number}, {"Longitude", type number}, {"Country", type text}, {"Region", type text}, {"Events", Int64.Type}, {"Deaths", Int64.Type}})
+				in
+				    #"Changed Type"
+
+	annotation PBI_ResultType = Table
+

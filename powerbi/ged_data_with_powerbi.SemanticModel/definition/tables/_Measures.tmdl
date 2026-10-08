@@ -1,0 +1,187 @@
+table _Measures
+	lineageTag: aa135520-b8f6-539e-b32d-f8d460d4d0b3
+
+	measure Deaths = SUM('Events'[Deaths])
+		formatString: #,##0
+		displayFolder: 1 Base
+		lineageTag: 6fccd929-0d90-538c-a7ff-4b4bfbaec922
+
+	measure 'Civilian Deaths' = SUM('Events'[Civilian Deaths])
+		formatString: #,##0
+		displayFolder: 1 Base
+		lineageTag: fa81a001-0dde-5277-9eca-c2dad4df8814
+
+	measure 'Event Count' = COUNTROWS('Events')
+		formatString: #,##0
+		displayFolder: 1 Base
+		lineageTag: 77f21ef0-5b65-50e4-854c-a6bc963152a4
+
+	measure 'Civilian Share' = DIVIDE([Civilian Deaths], [Deaths])
+		formatString: 0.0%
+		displayFolder: 1 Base
+		lineageTag: a8a5c190-2876-5a2d-b03b-4593acf8677a
+
+	measure 'Deaths 2024' = CALCULATE([Deaths], 'Events'[Year] = 2024)
+		formatString: #,##0
+		displayFolder: 2 KPI comparisons
+		lineageTag: 81f87e0c-e3a3-5736-9f2d-243c5577c233
+
+	measure 'Events 2024' = CALCULATE([Event Count], 'Events'[Year] = 2024)
+		formatString: #,##0
+		displayFolder: 2 KPI comparisons
+		lineageTag: eb268cc3-bef7-5683-8e99-2532b1b8f528
+
+	measure 'Civilian Share 2024' = CALCULATE([Civilian Share], 'Events'[Year] = 2024)
+		formatString: 0.0%
+		displayFolder: 2 KPI comparisons
+		lineageTag: 995d9dbd-66e7-5de8-969d-20e756a7752a
+
+	measure 'Countries 2024' = COUNTROWS(FILTER(VALUES('Events'[Country]), CALCULATE([Deaths], 'Events'[Year] = 2024) > 0))
+		formatString: #,##0
+		displayFolder: 2 KPI comparisons
+		lineageTag: 70b6a46f-155a-5ff6-b24c-46aaaef0208f
+
+	measure 'Deaths 2025' = CALCULATE([Deaths], 'Events'[Year] = 2025)
+		formatString: #,##0
+		displayFolder: 2 KPI comparisons
+		lineageTag: 3ae16d90-7620-5226-92f4-5f52034a946d
+
+	measure 'Events 2025' = CALCULATE([Event Count], 'Events'[Year] = 2025)
+		formatString: #,##0
+		displayFolder: 2 KPI comparisons
+		lineageTag: 846733a5-3cdc-54c4-9f63-9202e80788d5
+
+	measure 'Civilian Share 2025' = CALCULATE([Civilian Share], 'Events'[Year] = 2025)
+		formatString: 0.0%
+		displayFolder: 2 KPI comparisons
+		lineageTag: 293124ec-d0a4-5297-80d1-579da26e3677
+
+	measure 'Countries 2025' = COUNTROWS(FILTER(VALUES('Events'[Country]), CALCULATE([Deaths], 'Events'[Year] = 2025) > 0))
+		formatString: #,##0
+		displayFolder: 2 KPI comparisons
+		lineageTag: 20ae2d4b-65b2-512f-8a85-fe14be886bc1
+
+	measure 'Deaths YoY %' =
+			VAR Cur = [Deaths 2025]
+			VAR Prev = [Deaths 2024]
+			RETURN IF(ISBLANK(Cur) || ISBLANK(Prev), BLANK(), DIVIDE(Cur - Prev, Prev))
+		formatString: +0.0%;-0.0%
+		displayFolder: 2 KPI comparisons
+		lineageTag: 3af740ac-b963-5c8b-aa7d-549fe535ae25
+
+	measure 'Avg Deaths per Year' = DIVIDE([Deaths], DISTINCTCOUNT('Events'[Year]))
+		formatString: #,##0
+		displayFolder: 2 KPI comparisons
+		lineageTag: 3d48e9f6-d627-5e1b-ab18-2051783d48bf
+
+	measure 'Deaths Total Text' = "Ø " & FORMAT([Avg Deaths per Year], "#,##0") & " per year · " & FORMAT(DISTINCTCOUNT('Events'[Year]), "0") & " years"
+		displayFolder: 2 KPI comparisons
+		lineageTag: 702a5e3b-baca-5225-abb1-8f9097c7ffd7
+
+	measure 'Deaths 2025 Text' =
+			VAR P = [Deaths YoY %]
+			RETURN IF(ISBLANK(P), "no comparison available",
+			    IF(P >= 0, "▲ ", "▼ ") & FORMAT(P, "+0.0%;-0.0%") & " vs 2024 (" & FORMAT([Deaths 2024], "#,##0") & ")")
+		displayFolder: 2 KPI comparisons
+		lineageTag: 7241827f-ccd3-50fa-9423-9c78c9f595e4
+
+	measure 'Civilian Share Text' = "2025: " & FORMAT([Civilian Share 2025], "0.0%") & "  ·  2024: " & FORMAT([Civilian Share 2024], "0.0%")
+		displayFolder: 2 KPI comparisons
+		lineageTag: 7de738ae-4b73-566e-8f0b-40aca3e802ba
+
+	measure 'Countries Text' = "2024: " & FORMAT([Countries 2024], "0") & " countries"
+		displayFolder: 2 KPI comparisons
+		lineageTag: 5074e87f-a6f8-5a6c-a6e0-3692d3390b6f
+
+	measure 'Events Text' =
+			VAR Cur = [Events 2025]
+			VAR Prev = [Events 2024]
+			RETURN IF(Prev = 0 || ISBLANK(Prev), "no comparison available",
+			    FORMAT(DIVIDE(Cur - Prev, Prev), "+0.0%;-0.0%") & " vs 2024 (" & FORMAT(Prev, "#,##0") & ")")
+		displayFolder: 2 KPI comparisons
+		lineageTag: f9e4b581-7c63-5e67-b2d5-921dd26e03e6
+
+	measure 'Top 10 Country Deaths' =
+			VAR R = RANKX(ALLSELECTED('Events'[Country]), [Deaths], , DESC)
+			RETURN IF(R <= 10, [Deaths])
+		formatString: #,##0
+		displayFolder: 3 Charts
+		lineageTag: 4e720017-b961-5c20-a979-e36116066f5b
+
+	measure 'Deaths Spread' = SUM('Monthly'[Deaths Spread])
+		formatString: #,##0
+		displayFolder: 4 Monthly
+		lineageTag: 8154bf8e-02af-5927-a285-302f71a1f6ef
+
+	measure 'Deaths Start Month' = SUM('Monthly'[Deaths Start Month])
+		formatString: #,##0
+		displayFolder: 4 Monthly
+		lineageTag: 121e8349-d3c5-537a-85ae-13fd4d32dfc7
+
+	measure 'Top 5 Monthly Deaths' =
+			// top 5 countries of 2025 (rank computed in SQL), months since Jan 2023, long events spread over their days
+			VAR Mn = MAX('Monthly'[Month])
+			RETURN IF(Mn >= DATE(2023, 1, 1), CALCULATE([Deaths Spread], KEEPFILTERS('Monthly'[Rank 2025] IN {1, 2, 3, 4, 5})))
+		formatString: #,##0
+		displayFolder: 4 Monthly
+		lineageTag: 6c69edac-c690-5090-b9dd-6f7761894113
+
+	measure 'Sudan Spread' =
+			VAR Mn = MAX('Monthly'[Month])
+			RETURN IF(Mn >= DATE(2025, 1, 1), CALCULATE([Deaths Spread], 'Monthly'[Country] = "Sudan") + 0)
+		formatString: #,##0
+		displayFolder: 4 Monthly
+		lineageTag: dffa2b4c-5d93-5abb-b19b-117c76f729e1
+
+	measure 'Sudan Start Month' =
+			VAR Mn = MAX('Monthly'[Month])
+			RETURN IF(Mn >= DATE(2025, 1, 1), CALCULATE([Deaths Start Month], 'Monthly'[Country] = "Sudan") + 0)
+		formatString: #,##0
+		displayFolder: 4 Monthly
+		lineageTag: 87d87c16-4563-520b-b71c-c4a57a9456ad
+
+	measure 'Ukraine Spread' =
+			VAR Mn = MAX('Monthly'[Month])
+			RETURN IF(Mn >= DATE(2025, 1, 1), CALCULATE([Deaths Spread], 'Monthly'[Country] = "Ukraine") + 0)
+		formatString: #,##0
+		displayFolder: 4 Monthly
+		lineageTag: 3f8579fa-dca9-5c38-9383-b15318e81b11
+
+	measure 'Ukraine Start Month' =
+			VAR Mn = MAX('Monthly'[Month])
+			RETURN IF(Mn >= DATE(2025, 1, 1), CALCULATE([Deaths Start Month], 'Monthly'[Country] = "Ukraine") + 0)
+		formatString: #,##0
+		displayFolder: 4 Monthly
+		lineageTag: 0627c9d1-3945-5494-9d35-c22732c377c1
+
+	measure 'Deaths Exact List' = CALCULATE(SUM('Top Events'[Deaths]), KEEPFILTERS('Top Events'[List] = "exact"))
+		formatString: #,##0
+		displayFolder: 5 Data traps
+		lineageTag: 65dbd366-93b4-55e6-a48c-41a6fca4ecd9
+
+	measure 'Deaths Multi-day List' = CALCULATE(SUM('Top Events'[Deaths]), KEEPFILTERS('Top Events'[List] = "multi"))
+		formatString: #,##0
+		displayFolder: 5 Data traps
+		lineageTag: c109473a-00d1-551f-8cd9-493c5aabd8cf
+
+	column Value
+		dataType: int64
+		isHidden
+		formatString: 0
+		lineageTag: 1cde4cd7-732f-55dc-8188-0b5673705ca6
+		summarizeBy: none
+		sourceColumn: Value
+
+		annotation SummarizationSetBy = Automatic
+
+	partition _Measures = m
+		mode: import
+		source =
+				let
+				  Source = #table({"Value"}, {{0}}),
+				  #"Changed Type" = Table.TransformColumnTypes(Source, {{"Value", Int64.Type}})
+				in
+				  #"Changed Type"
+
+	annotation PBI_ResultType = Table
+

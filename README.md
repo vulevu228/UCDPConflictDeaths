@@ -15,7 +15,7 @@ See [Data traps](#data-traps) below.
 
 ## Screenshots
 
-**Metabase**
+**Metabase** (built first, with German labels)
 
 ![Metabase dashboard](images/metabase-dashboard.png)
 
